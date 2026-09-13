@@ -64,12 +64,24 @@ _cache = get_cache_ghost_writer()
 CHAVES_SALVAR = ["usuario","historico_ghost_writer"]
 
 def gerar_json():
-    return json.dumps({k: st.session_state.get(k) for k in CHAVES_SALVAR}, ensure_ascii=False, indent=2, default=str)
+    return json.dumps({k: st.session_state.get(k) for k in list(st.session_state.keys()) if not k.startswith("_") and k not in ("api_key",)}, ensure_ascii=False, indent=2, default=str)
 
 def carregar_json_sessao(dados):
-    for k,v in dados.items():
-        if k in CHAVES_SALVAR:
-            st.session_state[k] = v
+    _bloq = {'api_key','etapa','nome_login','chave_login','upload_login','btn_entrar_login'}
+    _pref = (
+        'btn_','sel_','ul_','dl_','cad_','_sub','_sm','_tab','_bsc',
+        'ativo_','rem_','sel_pet_','ev_','prof_','hig_','prev_',
+        'vac_','sint_','comp_','trad_','subs_','amb_','viag_','chat_',
+        'duvida_','emerg_','peso_','data_','obs_','tipo_','vet_','desc_',
+        'local_','prox_','alim','sit_emerg_','tc_','oraf','siau','agmag',
+        'lv','mv','pt','pi','sh','wc','rv','rp','rc',
+    )
+    import re as _re
+    for k, v in dados.items():
+        if k in _bloq: continue
+        if any(k.startswith(p) for p in _pref): continue
+        if _re.match(r'.+_\d+$', k): continue
+        st.session_state[k] = v
 
 def salvar_perfil_cache(usuario):
     _cache["perfis"][usuario] = {k: st.session_state.get(k) for k in CHAVES_SALVAR}
@@ -150,7 +162,7 @@ elif st.session_state.etapa == "App":
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
         col_sv, _ = st.columns([1,3])
         with col_sv:
-            st.download_button("💾 Salvar dados (.json)", data=json.dumps({k:st.session_state.get(k) for k in CHAVES_SALVAR}, ensure_ascii=False, indent=2, default=str), file_name=f"ghost_writer_{st.session_state.usuario}.json", mime="application/json", key="dl_ghost__1")
+            st.download_button("💾 Salvar dados (.json)", data=json.dumps({k: st.session_state.get(k) for k in list(st.session_state.keys()) if not k.startswith("_") and k not in ("api_key",)}, ensure_ascii=False, indent=2, default=str), file_name=f"ghost_writer_{st.session_state.usuario}.json", mime="application/json", key="dl_ghost__1")
 
     with _tab_estilo_gw:
         st.header("🎙️ Minha Voz e Estilo")
@@ -163,6 +175,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_estilo_gw}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_estilo_gw = resp.choices[0].message.content
+                        if resultado_estilo_gw: st.session_state['res_estilo_gw_ghostw1'] = str(resultado_estilo_gw)
                         st.session_state["res_estilo_gw"] = resultado_estilo_gw
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Minha Voz e Estilo","resumo":prompt_estilo_gw[:60],"conteudo":resultado_estilo_gw})
                         st.session_state.historico_ghost_writer = historico
@@ -185,6 +198,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_posts_redes}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_posts_redes = resp.choices[0].message.content
+                        if resultado_posts_redes: st.session_state['res_posts_redes_ghostw2'] = str(resultado_posts_redes)
                         st.session_state["res_posts_redes"] = resultado_posts_redes
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Posts para Redes","resumo":prompt_posts_redes[:60],"conteudo":resultado_posts_redes})
                         st.session_state.historico_ghost_writer = historico
@@ -207,6 +221,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_artigos}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_artigos = resp.choices[0].message.content
+                        if resultado_artigos: st.session_state['res_artigos_ghostw3'] = str(resultado_artigos)
                         st.session_state["res_artigos"] = resultado_artigos
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Artigos e Blog","resumo":prompt_artigos[:60],"conteudo":resultado_artigos})
                         st.session_state.historico_ghost_writer = historico
@@ -229,6 +244,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_emails_gw}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_emails_gw = resp.choices[0].message.content
+                        if resultado_emails_gw: st.session_state['res_emails_gw_ghostw4'] = str(resultado_emails_gw)
                         st.session_state["res_emails_gw"] = resultado_emails_gw
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"E-mails","resumo":prompt_emails_gw[:60],"conteudo":resultado_emails_gw})
                         st.session_state.historico_ghost_writer = historico
@@ -251,6 +267,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_ebook_gw}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_ebook_gw = resp.choices[0].message.content
+                        if resultado_ebook_gw: st.session_state['res_ebook_gw_ghostw5'] = str(resultado_ebook_gw)
                         st.session_state["res_ebook_gw"] = resultado_ebook_gw
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"E-book","resumo":prompt_ebook_gw[:60],"conteudo":resultado_ebook_gw})
                         st.session_state.historico_ghost_writer = historico
@@ -273,6 +290,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_roteiros}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_roteiros = resp.choices[0].message.content
+                        if resultado_roteiros: st.session_state['res_roteiros_ghostw6'] = str(resultado_roteiros)
                         st.session_state["res_roteiros"] = resultado_roteiros
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Roteiros de Vídeo","resumo":prompt_roteiros[:60],"conteudo":resultado_roteiros})
                         st.session_state.historico_ghost_writer = historico
@@ -295,6 +313,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_threads}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_threads = resp.choices[0].message.content
+                        if resultado_threads: st.session_state['res_threads_ghostw7'] = str(resultado_threads)
                         st.session_state["res_threads"] = resultado_threads
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Threads","resumo":prompt_threads[:60],"conteudo":resultado_threads})
                         st.session_state.historico_ghost_writer = historico
@@ -317,6 +336,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_legendas}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_legendas = resp.choices[0].message.content
+                        if resultado_legendas: st.session_state['res_legendas_ghostw8'] = str(resultado_legendas)
                         st.session_state["res_legendas"] = resultado_legendas
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Legendas","resumo":prompt_legendas[:60],"conteudo":resultado_legendas})
                         st.session_state.historico_ghost_writer = historico
@@ -339,6 +359,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_ideias_gw}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_ideias_gw = resp.choices[0].message.content
+                        if resultado_ideias_gw: st.session_state['res_ideias_gw_ghostw9'] = str(resultado_ideias_gw)
                         st.session_state["res_ideias_gw"] = resultado_ideias_gw
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Ideias de Conteúdo","resumo":prompt_ideias_gw[:60],"conteudo":resultado_ideias_gw})
                         st.session_state.historico_ghost_writer = historico
@@ -361,6 +382,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_calendario_gw}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_calendario_gw = resp.choices[0].message.content
+                        if resultado_calendario_gw: st.session_state['res_calendario_g_ghostw10'] = str(resultado_calendario_gw)
                         st.session_state["res_calendario_gw"] = resultado_calendario_gw
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Calendário Editorial","resumo":prompt_calendario_gw[:60],"conteudo":resultado_calendario_gw})
                         st.session_state.historico_ghost_writer = historico
@@ -383,6 +405,7 @@ elif st.session_state.etapa == "App":
                         msgs = [{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":prompt_salvos_gw}]
                         resp = client.chat.completions.create(messages=msgs, model="openai/gpt-oss-120b", max_tokens=2048)
                         resultado_salvos_gw = resp.choices[0].message.content
+                        if resultado_salvos_gw: st.session_state['res_salvos_gw_ghostw11'] = str(resultado_salvos_gw)
                         st.session_state["res_salvos_gw"] = resultado_salvos_gw
                         historico.append({"data":datetime.now().strftime("%d/%m %H:%M"),"aba":"Meus Textos","resumo":prompt_salvos_gw[:60],"conteudo":resultado_salvos_gw})
                         st.session_state.historico_ghost_writer = historico
